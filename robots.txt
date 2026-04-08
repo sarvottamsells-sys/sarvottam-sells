@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Allow: /Shop.html
+Allow: /index.html
+
+# Hide owner panel and source files from search engines
+Disallow: /Owner.html
+Disallow: /firebase-db.js
+Disallow: /config.js
+Disallow: /ROADMAP.md
