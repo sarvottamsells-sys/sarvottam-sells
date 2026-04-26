@@ -157,41 +157,6 @@
       color: #fff;
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 390px 1fr;
-      min-height: calc(100vh - 80px);
-      margin-top: 14px;
-    }
-
-    .left-panel {
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      padding: 28px 24px;
-      overflow-y: auto;
-      height: auto;
-    }
-
-    .right-panel {
-      padding: 28px 32px 80px;
-      overflow-y: auto;
-    }
-
-    /* Wide form layout when listing has no right panel */
-    #sec-listing .fg-row {
-      grid-template-columns: 1fr 1fr;
-    }
-
-    #sec-listing #sf .fg-row,
-    #sec-listing .fg-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 14px;
-    }
-
-    #sec-listing .upload-zone {
-      min-height: 120px;
-    }
 
     .store-row {
       display: flex;
@@ -929,21 +894,6 @@
       font-weight: 600;
     }
 
-    .meta-oos {
-      background: var(--red-bg);
-      color: var(--red);
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: 600;
-    }
-
-    .meta-ok {
-      background: var(--green-bg);
-      color: var(--green);
-      padding: 2px 8px;
-      border-radius: 10px;
-      font-weight: 600;
-    }
 
     .click-pill {
       display: inline-flex;
@@ -1333,21 +1283,8 @@
     /* LAYOUT for sections */
 
     @media(max-width:900px) {
-      .layout {
-        grid-template-columns: 1fr;
-      }
-
-      .left-panel {
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-      }
-
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
-      }
-
-      .right-panel {
-        padding: 22px 20px 60px;
       }
     }
 
@@ -1363,10 +1300,6 @@
       .p-row-img {
         width: 60px;
         height: 60px;
-      }
-
-      .left-panel {
-        padding: 20px 14px;
       }
 
       .g-badge {
@@ -1788,10 +1721,7 @@
 
   <div class="toast" id="toast"><span id="toast-msg"></span></div>
 
-  <!-- Firebase SDK (must load before main script) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="firebase-db.js"></script>
+  <!-- Firebase + DB already loaded in <head>, no need to reload here -->
 
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
@@ -1810,19 +1740,6 @@
 
     let currentImgs = [];
     let varItems = [];
-
-    // CONFIG
-    function applyConfigTexts() {
-      const C = typeof SITE_CONFIG !== 'undefined' ? SITE_CONFIG : {};
-      const sn = gsn();
-      document.title = sn + ' – Owner Panel';
-      const b = document.getElementById('brand-sn'); if (b) b.textContent = sn;
-      const sl = document.getElementById('store-name-lbl'); if (sl) sl.textContent = sn;
-      const ob = document.getElementById('owner-badge'); if (ob) ob.textContent = C.ownerPanelBadge || 'Owner Panel';
-      const vl = document.getElementById('view-shop-link'); if (vl) vl.textContent = C.viewShopText || '🛍 View Shop';
-      if (C.headingFont) document.querySelectorAll('.g-brand,.stat-num,.form-title,.coupon-hdr,.sec-hdr h2,.modal-header h3,.big-num,.p-row-name,.empty-list h3').forEach(el => { el.style.fontFamily = `'${C.headingFont}',serif`; });
-      if (C.bodyFont) document.body.style.fontFamily = `'${C.bodyFont}',sans-serif`;
-    }
 
     // SIDEBAR NAV
     function showSection(name) {
@@ -2027,7 +1944,7 @@
           </div>
           <div style="text-align:right;flex-shrink:0">
             <div style="font-weight:700;font-size:16px;color:var(--accent)">👆 ${t}</div>
-            <button onclick="showClickModal('${p.id}')" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;margin-top:4px;color:var(--text-mid)">Details</button>
+            <button onclick="openClickModal('${p.id}')" style="font-size:11px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;margin-top:4px;color:var(--text-mid)">Details</button>
           </div>
         </div>`;
       }).join('');
@@ -2313,7 +2230,14 @@
     }
 
     function editSN() { const n = prompt('Enter store name:', gsn()); if (n && n.trim()) { ssn(n.trim()); renderAll(); toast('✓ Store name updated!'); } }
-    function saveWA() { setWA(document.getElementById('f-waphone').value.trim()); toast('✓ WhatsApp saved!'); }
+    let _waTimer = null;
+    function saveWA() {
+      clearTimeout(_waTimer);
+      _waTimer = setTimeout(() => {
+        setWA(document.getElementById('f-waphone').value.trim());
+        toast('✓ WhatsApp number saved!');
+      }, 800);
+    }
     function saveAnn() { const v = document.getElementById('ann-inp').value.trim(); setAnn(v); toast('✓ Announcement ' + (v ? 'updated!' : 'cleared!')); }
     function clearAnn() { document.getElementById('ann-inp').value = ''; saveAnn(); }
 
@@ -2477,10 +2401,15 @@
 
     // ── MAIN RENDER ───────────────────────────────────────────────────────
     function renderAll() {
+      const C = typeof SITE_CONFIG !== 'undefined' ? SITE_CONFIG : {};
       const sn = gsn();
       document.title = sn + ' – Owner Panel';
       document.getElementById('brand-sn').textContent = sn;
       document.getElementById('store-name-lbl').textContent = sn;
+      const ob = document.getElementById('owner-badge'); if (ob) ob.textContent = C.ownerPanelBadge || 'Owner Panel';
+      const vl = document.getElementById('view-shop-link'); if (vl) vl.textContent = C.viewShopText || '&#128717; View Shop';
+      if (C.headingFont) document.querySelectorAll('.g-brand,.stat-num,.form-title,.coupon-hdr,.sec-hdr h2,.modal-header h3,.big-num,.p-row-name,.empty-list h3').forEach(el => { el.style.fontFamily = `'${C.headingFont}',serif`; });
+      if (C.bodyFont) document.body.style.fontFamily = `'${C.bodyFont}',sans-serif`;
       const annInp = document.getElementById('ann-inp');
       if (annInp) annInp.value = (window._SS ? window._SS.announcement : '') || localStorage.getItem('ms_announcement') || '';
       const waf = document.getElementById('f-waphone'); if (waf && document.activeElement !== waf) waf.value = (window._SS ? window._SS.waPhone : '') || localStorage.getItem('ms_waPhone') || '';
@@ -2491,11 +2420,19 @@
     function toast(msg, err = 0) { const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = msg; t.className = 'toast' + (err ? ' err' : '') + ' show'; setTimeout(() => t.classList.remove('show'), 2800); }
     function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
-    applyConfigTexts();
+    window._onSpError = function(msg) {
+      toast('⚠ Save failed: ' + (msg || 'Check internet / storage'), 1);
+    };
+
     // Firebase sync: load cloud data first, then render (debounced to prevent double-render)
     let _ownerRenderTimer = null;
     function debouncedRenderAll() {
       clearTimeout(_ownerRenderTimer);
+      // Only re-render if user isn't actively editing a variation product form
+      const editId = document.getElementById('edit-id');
+      const lt = document.getElementById('f-lt');
+      const isEditingVariation = editId && editId.value && lt && lt.value === 'variation';
+      if (isEditingVariation) return; // Skip re-render during active variation edits
       _ownerRenderTimer = setTimeout(() => { renderAll(); }, 300);
     }
     if (window._SS && window._SS.init) {
