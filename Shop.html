@@ -1478,12 +1478,9 @@
 
   <div class="toast" id="toast"><span id="toast-msg"></span></div>
 
-  <!-- Firebase SDK (must load before main script) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <script src="firebase-db.js"></script>
 
   <script>
+
     // DATA — provided by firebase-db.js (cloud sync)
     // gp() and gsn() come from window.gp / window.gsn in firebase-db.js
     const gann = () => (window._SS ? window._SS.announcement : '') || localStorage.getItem('ms_announcement') || '';
@@ -2005,12 +2002,6 @@
       if (!link || link === 'undefined') { toast('No buy link set', 1); return; }
       window.open(link, '_blank', 'noopener');
       appliedCoupon = null;
-    }
-    function doBuy(pid, link, e) {
-      if (e) e.stopPropagation();
-      trackClick(pid);
-      if (!link || link === 'undefined') { toast('No buy link set', 1); return; }
-      window.open(link, '_blank', 'noopener');
     }
     function doBulk(name, link, e) {
       if (e) e.stopPropagation();
