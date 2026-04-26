@@ -1756,7 +1756,7 @@
     }
     function renderPromotionsSection() {
       const ann = document.getElementById('ann-inp');
-      if (ann) ann.value = localStorage.getItem('ms_announcement') || '';
+      if (ann) ann.value = (window._SS && window._SS.announcement) || localStorage.getItem('ms_announcement') || '';
       renderCoupons();
     }
     function renderProductsSection() { renderProductList(); }
@@ -2135,7 +2135,7 @@
           badge: document.getElementById('f-badge').value.trim(),
           variationLabelType: vtype,
           variations: varItems.map(v => ({
-            id: v.id || ('v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5)),
+            id: v.id || ('v_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8)),
             label: v.label, labelType: vtype,
             offerPrice: parseFloat(v.offerPrice) || 0, origPrice: parseFloat(v.origPrice) || 0,
             images: v.images || [], imgData: v.images && v.images[0] ? v.images[0] : '',

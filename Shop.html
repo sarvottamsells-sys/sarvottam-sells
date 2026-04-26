@@ -1595,8 +1595,9 @@
       const prMax = parseFloat((document.getElementById('pr-max') || {}).value) || Infinity;
       buildChips(prods);
       let list = prods.filter(p => {
+        if (p.hidden) return false;
         if (activeCat !== 'all' && p.category !== activeCat) return false;
-        if (q && !p.name.toLowerCase().includes(q) && !(p.desc || '').toLowerCase().includes(q) && !(p.category || '').toLowerCase().includes(q)) return false;
+        if (q && !p.name.toLowerCase().includes(q) && !(p.displayName || '').toLowerCase().includes(q) && !(p.desc || '').toLowerCase().includes(q) && !(p.category || '').toLowerCase().includes(q)) return false;
         const price = p.offerPrice || p.price || 0;
         if (prMin > 0 && price < prMin) return false;
         if (prMax < Infinity && price > prMax) return false;
@@ -1980,7 +1981,8 @@
     let appliedCoupon = null;
     function applyCoupon() {
       const val = (document.getElementById('coup-inp') || {}).value || '';
-      const coupons = JSON.parse(localStorage.getItem('ms_coupons') || '[]');
+      const coupons = (window._SS && window._SS.coupons) || JSON.parse(localStorage.getItem('ms_coupons') || '[]');
+
       const found = coupons.find(c => c.code === val.toUpperCase());
       const msg = document.getElementById('coup-msg');
       if (!found) { if (msg) msg.innerHTML = '<span style="color:var(--red)">✗ Invalid code</span>'; appliedCoupon = null; return; }
@@ -2006,7 +2008,7 @@
     function doBulk(name, link, e) {
       if (e) e.stopPropagation();
       const C = typeof SITE_CONFIG !== 'undefined' ? SITE_CONFIG : {};
-      const ph = localStorage.getItem('ms_waPhone') || C.defaultWhatsApp || '';
+      const ph = (window._SS && window._SS.waPhone) || localStorage.getItem('ms_waPhone') || C.defaultWhatsApp || '';
       const msg = `Hi, I want a *BULK ORDER* for:%0A🛍 *${name}*%0A%0APlease share wholesale pricing. Thank you!`;
       window.open(ph ? `https://wa.me/${ph}?text=${msg}` : `https://wa.me/?text=${msg}`, '_blank', 'noopener');
     }
@@ -2021,7 +2023,7 @@
       if (!prods[idx].clicks) prods[idx].clicks = [];
       const di = prods[idx].clicks.findIndex(c => c.date === today);
       if (di > -1) prods[idx].clicks[di].count++; else prods[idx].clicks.push({ date: today, count: 1 });
-      try { localStorage.setItem('ms_products', JSON.stringify(prods)); } catch (e) { }
+      sp(prods); // Save clicks to Firestore + localStorage
     }
 
     // MENU / SEARCH

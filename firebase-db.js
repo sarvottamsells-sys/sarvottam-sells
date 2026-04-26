@@ -92,31 +92,39 @@ window.sp = (products) => {
   const oldIds  = new Set(previousProducts.map(p => p.id));
   const newIds  = new Set(products.map(p => p.id));
 
-  const batch = _db.batch();
+  // Firestore batch limit = 500 ops. Chunk if needed.
+  const _commitBatches = async (sets, deletes) => {
+    const ops = [...sets, ...deletes];
+    const CHUNK = 490; // safe under 500 limit
+    for (let i = 0; i < ops.length; i += CHUNK) {
+      const b = _db.batch();
+      ops.slice(i, i + CHUNK).forEach(fn => fn(b));
+      await b.commit();
+    }
+  };
 
-  // Upsert new or changed products
+  const setOps = [];
+  const delOps = [];
+
   products.forEach(p => {
     const oldP = previousProducts.find(x => x.id === p.id);
-    // Always write if new, or if content changed (simple stringify diff)
     if (!oldP || JSON.stringify(oldP) !== JSON.stringify(p)) {
       const ref = _db.collection('data').doc('products').collection('items').doc(p.id);
-      batch.set(ref, _stripImages(p));
+      setOps.push(b => b.set(ref, _stripImages(p)));
     }
   });
 
-  // Delete removed products
   previousProducts.forEach(p => {
     if (!newIds.has(p.id)) {
       const ref = _db.collection('data').doc('products').collection('items').doc(p.id);
-      batch.delete(ref);
+      delOps.push(b => b.delete(ref));
     }
   });
 
-  batch.commit()
+  _commitBatches(setOps, delOps)
     .then(() => console.log('[DB] products saved ✓ (' + products.length + ' total)'))
     .catch(e => {
       console.warn('[DB] products write failed:', e.message);
-      // Revert memory on failure
       window._SS.products = previousProducts;
       if (typeof window._onSpError === 'function') window._onSpError(e.message);
     });
@@ -177,11 +185,9 @@ window._SS.init = function(onUpdate) {
               const oldList = (oldDoc.data() && oldDoc.data().list) || [];
               if (oldList.length > 0) {
                 console.log('[DB] Migrating', oldList.length, 'products from old format...');
-                // Fake an sp() call to migrate
-                const saved = window._SS.products;
                 window._SS.products = oldList;
                 _lsSet('ms_products', oldList);
-                window.sp(oldList); // This will write to new subcollection
+                window.sp(oldList);
                 if (onUpdate) onUpdate();
               }
             }
