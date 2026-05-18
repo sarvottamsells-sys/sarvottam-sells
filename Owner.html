@@ -1376,6 +1376,14 @@
       <button class="o-nav" id="nav-analytics" onclick="showSection('analytics')" title="Analytics">
         <span class="ni">📊</span><span class="nl">Stats</span>
       </button>
+      <div class="nav-sep"></div>
+      <button class="o-nav" id="nav-reviews" onclick="showSection('reviews')" title="Customer Reviews">
+        <span class="ni">⭐</span><span class="nl">Reviews</span>
+      </button>
+      <div class="nav-sep"></div>
+      <button class="o-nav" id="nav-trash" onclick="showSection('trash')" title="Trash / Recycle Bin">
+        <span class="ni">🗑</span><span class="nl">Trash</span>
+      </button>
     </nav>
     <div class="owner-content">
       <!-- SECTION 1: LISTING (form) -->
@@ -1555,14 +1563,21 @@
               <option value="low">Low Stock</option>
               <option value="clicks">Most Clicked</option>
             </select>
+            <button id="bulk-mode-btn" onclick="toggleBulkMode()" title="Bulk edit stock"
+              style="padding:7px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-mid);font-size:12px;font-weight:600;cursor:pointer">✏️ Bulk Edit</button>
             <button onclick="exportData()" title="Download backup"
-              style="padding:7px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-mid);font-size:12px;font-weight:600;cursor:pointer">⬇
-              Export</button>
+              style="padding:7px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-mid);font-size:12px;font-weight:600;cursor:pointer">⬇ Export</button>
             <button onclick="importData()" title="Restore from backup"
-              style="padding:7px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-mid);font-size:12px;font-weight:600;cursor:pointer">⬆
-              Import</button>
+              style="padding:7px 13px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-mid);font-size:12px;font-weight:600;cursor:pointer">⬆ Import</button>
             <span id="p-count-lbl" style="font-size:13px;color:var(--text-muted)">0 products</span>
           </div>
+        </div>
+        <!-- BULK ACTION BAR -->
+        <div id="bulk-action-bar" style="display:none;align-items:center;gap:10px;padding:10px 14px;background:var(--accent-bg);border:1px solid rgba(181,84,30,.2);border-radius:10px;margin-bottom:14px;flex-wrap:wrap">
+          <span id="bulk-count-lbl" style="font-size:13px;font-weight:600;color:var(--accent);flex:1">0 selected</span>
+          <button onclick="bulkMarkInStock()" style="padding:7px 12px;background:var(--green-bg);border:1px solid rgba(45,122,79,.25);border-radius:8px;color:var(--green);font-size:12px;font-weight:600;cursor:pointer">✅ Mark In Stock</button>
+          <button onclick="bulkMarkOOS()" style="padding:7px 12px;background:var(--red-bg);border:1px solid rgba(192,57,43,.2);border-radius:8px;color:var(--red);font-size:12px;font-weight:600;cursor:pointer">🚫 Mark OOS</button>
+          <button onclick="bulkDelete()" style="padding:7px 12px;background:var(--red-bg);border:1px solid rgba(192,57,43,.3);border-radius:8px;color:var(--red);font-size:12px;font-weight:700;cursor:pointer">🗑 Move to Trash</button>
         </div>
         <div class="product-list" id="product-list"></div>
       </div>
@@ -1607,10 +1622,11 @@
       <!-- SECTION 4: ANALYTICS DASHBOARD -->
       <div class="o-section" id="sec-analytics" style="flex-direction:column;padding:24px 28px;overflow-y:auto">
 
-        <div
-          style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
           <h2 style="font-size:24px;font-weight:700">📊 Analytics Dashboard</h2>
           <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="checkLowStock()"
+              style="padding:7px 14px;border:1.5px solid rgba(192,57,43,.3);border-radius:8px;background:var(--red-bg);color:var(--red);font-size:12px;font-weight:600;cursor:pointer">🔔 Low Stock Alert</button>
             <button onclick="sendWaSummary()"
               style="padding:7px 14px;border:1.5px solid rgba(37,211,102,.4);border-radius:8px;background:rgba(37,211,102,.08);color:#128C7E;font-size:12px;font-weight:600;cursor:pointer">📲
               Send to WhatsApp</button>
@@ -1702,6 +1718,42 @@
 
       </div>
 
+      <!-- SECTION 5: REVIEWS MODERATION -->
+      <div class="o-section" id="sec-reviews" style="flex-direction:column;padding:24px 28px;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+          <h2 style="font-size:24px;font-weight:700">⭐ Customer Reviews</h2>
+          <div style="display:flex;gap:8px">
+            <button onclick="renderReviewsSection()" style="padding:7px 14px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--text-mid);font-size:12px;font-weight:600;cursor:pointer">🔄 Refresh</button>
+            <button onclick="clearApprovedReviews()" style="padding:7px 14px;border:1.5px solid rgba(192,57,43,.3);border-radius:8px;background:var(--red-bg);color:var(--red);font-size:12px;font-weight:600;cursor:pointer">🗑 Clear All Approved</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--gold)">⏳ Pending Approval</div>
+            <div id="reviews-pending" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px">
+            <div style="font-size:14px;font-weight:700;margin-bottom:14px;color:var(--green)">✅ Approved Reviews</div>
+            <div id="reviews-approved" style="display:flex;flex-direction:column;gap:10px"></div>
+          </div>
+        </div>
+        <div style="background:var(--blue-bg);border:1px solid rgba(37,99,168,.15);border-radius:var(--radius);padding:14px 18px;font-size:13px;color:var(--blue);line-height:1.6">
+          💡 <strong>How it works:</strong> Customers submit reviews on your Shop page. They appear here as "Pending". You approve/reject them. Only approved reviews show on Shop page with ⭐ rating.
+        </div>
+      </div>
+
+      <!-- SECTION 6: TRASH / RECYCLE BIN -->
+      <div class="o-section" id="sec-trash" style="flex-direction:column;padding:24px 28px;overflow-y:auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:22px">
+          <h2 style="font-size:24px;font-weight:700">🗑 Trash — Deleted Products</h2>
+          <button onclick="emptyTrash()" style="padding:7px 16px;border:1.5px solid rgba(192,57,43,.4);border-radius:8px;background:var(--red-bg);color:var(--red);font-size:12px;font-weight:700;cursor:pointer">🗑 Empty Trash</button>
+        </div>
+        <div style="background:var(--gold-bg);border:1px solid rgba(156,122,60,.2);border-radius:10px;padding:12px 16px;font-size:13px;color:var(--gold);margin-bottom:20px;line-height:1.5">
+          ♻️ Deleted products stay here for <strong>30 days</strong>, then are permanently removed. Click <strong>Restore</strong> to bring them back.
+        </div>
+        <div id="trash-list" style="display:flex;flex-direction:column;gap:12px"></div>
+      </div>
+
     </div><!-- end owner-content -->
   </div><!-- end owner-wrap -->
 
@@ -1743,7 +1795,7 @@
 
     // SIDEBAR NAV
     function showSection(name) {
-      ['listing', 'products', 'promotions', 'analytics'].forEach(n => {
+      ['listing', 'products', 'promotions', 'analytics', 'reviews', 'trash'].forEach(n => {
         const sec = document.getElementById('sec-' + n);
         const nav = document.getElementById('nav-' + n);
         if (sec) sec.classList.toggle('active', n === name);
@@ -1753,6 +1805,8 @@
       if (name === 'products') renderProductsSection();
       if (name === 'promotions') renderPromotionsSection();
       if (name === 'analytics') renderAnalyticsSection();
+      if (name === 'reviews') renderReviewsSection();
+      if (name === 'trash') renderTrashSection();
     }
     function renderPromotionsSection() {
       const ann = document.getElementById('ann-inp');
@@ -2214,7 +2268,120 @@
       document.getElementById('f-name').focus();
     }
 
-    function deleteProduct(id) { if (!confirm('Delete this product?')) return; sp(gp().filter(p => p.id !== id)); renderAll(); toast('Product deleted'); }
+    // ── SOFT DELETE (Phase 7 — Trash System) ───────────────────────────────
+    function getTrash() { return JSON.parse(localStorage.getItem('ms_trash') || '[]'); }
+    function setTrash(t) { try { localStorage.setItem('ms_trash', JSON.stringify(t)); } catch(e) {} }
+
+    function deleteProduct(id) {
+      if (!confirm('Move this product to Trash? It can be restored within 30 days.')) return;
+      const prods = gp();
+      const idx = prods.findIndex(p => p.id === id);
+      if (idx === -1) return;
+      const p = prods[idx];
+      const trash = getTrash();
+      // Auto-purge items older than 30 days before adding
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const cleanTrash = trash.filter(t => t.deletedAt > thirtyDaysAgo);
+      cleanTrash.push({ ...p, deletedAt: Date.now() });
+      setTrash(cleanTrash);
+      prods.splice(idx, 1);
+      sp(prods);
+      renderAll();
+      // Update trash badge
+      updateTrashBadge();
+      toast('🗑 Moved to Trash — Restore within 30 days');
+    }
+
+    function restoreProduct(id) {
+      const trash = getTrash();
+      const idx = trash.findIndex(t => t.id === id);
+      if (idx === -1) return;
+      const p = { ...trash[idx] };
+      delete p.deletedAt;
+      const prods = gp();
+      prods.push(p);
+      sp(prods);
+      trash.splice(idx, 1);
+      setTrash(trash);
+      renderTrashSection();
+      renderAll();
+      updateTrashBadge();
+      toast('♻️ Product restored!');
+    }
+
+    function permanentDelete(id) {
+      if (!confirm('PERMANENTLY delete? This cannot be undone!')) return;
+      const trash = getTrash().filter(t => t.id !== id);
+      setTrash(trash);
+      renderTrashSection();
+      updateTrashBadge();
+      toast('🗑 Permanently deleted', 1);
+    }
+
+    function emptyTrash() {
+      if (!getTrash().length) { toast('Trash is already empty!'); return; }
+      if (!confirm('Empty Trash? All items will be permanently deleted!')) return;
+      setTrash([]);
+      renderTrashSection();
+      updateTrashBadge();
+      toast('🗑 Trash emptied!');
+    }
+
+    function updateTrashBadge() {
+      const trash = getTrash();
+      const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+      const valid = trash.filter(t => t.deletedAt > thirtyDaysAgo);
+      const nav = document.getElementById('nav-trash');
+      if (nav) {
+        const existing = nav.querySelector('.trash-count');
+        if (existing) existing.remove();
+        if (valid.length > 0) {
+          const badge = document.createElement('span');
+          badge.className = 'trash-count';
+          badge.textContent = valid.length;
+          badge.style.cssText = 'position:absolute;top:4px;right:4px;background:var(--red);color:#fff;font-size:8px;font-weight:700;border-radius:8px;padding:1px 4px;min-width:14px;text-align:center;';
+          nav.appendChild(badge);
+        }
+      }
+    }
+
+    function renderTrashSection() {
+      const list = document.getElementById('trash-list');
+      if (!list) return;
+      const trash = getTrash();
+      const now = Date.now();
+      const thirtyDaysAgo = now - 30 * 24 * 60 * 60 * 1000;
+      // Auto-purge expired items
+      const valid = trash.filter(t => t.deletedAt > thirtyDaysAgo);
+      if (valid.length !== trash.length) setTrash(valid);
+
+      if (!valid.length) {
+        list.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--text-muted)"><div style="font-size:48px;opacity:.3;margin-bottom:12px">🗑</div><h3 style="font-size:18px;margin-bottom:6px">Trash is Empty</h3><p>Deleted products will appear here</p></div>';
+        return;
+      }
+
+      list.innerHTML = valid.map(p => {
+        const daysLeft = Math.ceil((p.deletedAt + 30*24*60*60*1000 - now) / (24*60*60*1000));
+        const imgs = p.images || (p.imgData ? [p.imgData] : []);
+        const thumb = imgs[0] || (p.variations && p.variations[0] ? (p.variations[0].images && p.variations[0].images[0] ? p.variations[0].images[0] : p.variations[0].imgData || '') : '');
+        const price = p.offerPrice || (p.variations && p.variations[0] ? p.variations[0].offerPrice : 0) || 0;
+        const deletedDate = new Date(p.deletedAt).toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'});
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;display:grid;grid-template-columns:72px 1fr auto;align-items:center">
+          <div style="width:72px;height:72px;background:var(--bg2);display:flex;align-items:center;justify-content:center;overflow:hidden;opacity:.7">
+            ${thumb ? `<img src="${esc(thumb)}" style="width:100%;height:100%;object-fit:contain;padding:4px">` : '<span style="font-size:24px">📦</span>'}
+          </div>
+          <div style="padding:12px 14px;opacity:.8">
+            <div style="font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.displayName || p.name)}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px">₹${Number(price).toLocaleString('en-IN')} · Deleted: ${deletedDate}</div>
+            <div style="font-size:11px;margin-top:3px;color:${daysLeft <= 3 ? 'var(--red)' : 'var(--text-muted)'}">⏳ ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left before permanent deletion</div>
+          </div>
+          <div style="padding:0 14px;display:flex;gap:7px;flex-shrink:0">
+            <button onclick="restoreProduct('${p.id}')" style="padding:7px 12px;background:var(--green-bg);border:1px solid rgba(45,122,79,.25);border-radius:8px;color:var(--green);font-size:12px;font-weight:600;cursor:pointer">♻️ Restore</button>
+            <button onclick="permanentDelete('${p.id}')" style="width:32px;height:32px;background:var(--red-bg);border:1px solid rgba(192,57,43,.2);border-radius:8px;color:var(--red);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center">🗑</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
 
     function resetForm() {
       const C = typeof SITE_CONFIG !== 'undefined' ? SITE_CONFIG : {};
@@ -2319,11 +2486,13 @@
           const op = p.offerPrice || p.price || 0;
           const disc = p.origPrice > op ? Math.round((1 - op / p.origPrice) * 100) : 0;
           const oos = p.inStock === false || p.stockQty === 0;
+          const lowStk = !oos && p.stockQty > 0 && p.stockQty <= 5;
           price = '₹' + Number(op).toLocaleString('en-IN') + (disc > 0 ? ' (' + disc + '% off)' : '');
-          stock = `<button onclick="toggleProductStock('${p.id}')" title="Click to toggle stock" style="background:${oos ? 'var(--red-bg)' : 'var(--green-bg)'};color:${oos ? 'var(--red)' : 'var(--green)'};border:1px solid ${oos ? 'rgba(192,57,43,.2)' : 'rgba(45,122,79,.2)'};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">${oos ? '🚫 OOS' : '✓' + (p.stockQty ? ' (' + p.stockQty + ')' : ' In Stock')}</button>`;
+          stock = `<button onclick="toggleProductStock('${p.id}')" title="Click to toggle stock" style="background:${oos ? 'var(--red-bg)' : lowStk ? 'rgba(230,126,34,.1)' : 'var(--green-bg)'};color:${oos ? 'var(--red)' : lowStk ? '#e67e22' : 'var(--green)'};border:1px solid ${oos ? 'rgba(192,57,43,.2)' : lowStk ? 'rgba(230,126,34,.25)' : 'rgba(45,122,79,.2)'};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap">${oos ? '🚫 OOS' : lowStk ? '⚡ Low (' + p.stockQty + ')' : '✓' + (p.stockQty ? ' (' + p.stockQty + ')' : ' In Stock')}</button>`;
         }
-        return `<div class="p-row" style="animation-delay:${i * .04}s">
-      <div class="p-row-img">${thumb ? `<img src="${esc(thumb)}" alt="${esc(p.name)}">` : ' 📦'}</div>
+        const isBulkSel = _bulkSelected.has(p.id);
+        return `<div class="p-row" style="animation-delay:${i * .04}s${isBulkSel ? ';border-color:var(--accent);background:var(--accent-bg)' : ''}">
+      ${_bulkMode ? `<div style="display:flex;align-items:center;justify-content:center;width:76px;height:76px;flex-shrink:0"><input type="checkbox" ${isBulkSel ? 'checked' : ''} onchange="toggleBulkSelect('${p.id}')" style="width:20px;height:20px;accent-color:var(--accent);cursor:pointer"></div>` : `<div class="p-row-img">${thumb ? `<img src="${esc(thumb)}" alt="${esc(p.name)}">` : ' 📦'}</div>`}
       <div class="p-row-info">
         <div class="p-row-name">${esc(p.name)}</div>
         <div class="p-row-meta">
@@ -2340,7 +2509,7 @@
         <button class="icon-btn" onclick="duplicateProduct('${p.id}')" title="Duplicate">📋</button>
         <button class="icon-btn" onclick="toggleHideProduct('${p.id}')" title="${p.hidden ? 'Show in Shop' : 'Hide from Shop'}" style="opacity:${p.hidden ? '.5' : '1'}">${p.hidden ? '👁️‍🗨️' : '👁️'}</button>
         <button class="icon-btn" onclick="editProduct('${p.id}')" title="Edit">✏️</button>
-        <button class="icon-btn del" onclick="deleteProduct('${p.id}')" title="Delete">🗑️</button>
+        <button class="icon-btn del" onclick="deleteProduct('${p.id}')" title="Move to Trash">🗑️</button>
       </div>
     </div>`;
       }).join('');
@@ -2415,6 +2584,133 @@
       const waf = document.getElementById('f-waphone'); if (waf && document.activeElement !== waf) waf.value = (window._SS ? window._SS.waPhone : '') || localStorage.getItem('ms_waPhone') || '';
       renderCoupons();
       renderProductList();
+      // Update sidebar notification badges
+      updateTrashBadge();
+      renderReviewsSection();
+    }
+
+    // ── REVIEWS SYSTEM (Phase 13) ─────────────────────────────────────────
+    function getReviews() { return JSON.parse(localStorage.getItem('ms_reviews') || '[]'); }
+    function setReviews(r) { try { localStorage.setItem('ms_reviews', JSON.stringify(r)); } catch(e) {} }
+
+    function approveReview(id) {
+      const reviews = getReviews();
+      const r = reviews.find(x => x.id === id);
+      if (r) { r.status = 'approved'; setReviews(reviews); renderReviewsSection(); toast('✅ Review approved!'); }
+    }
+    function rejectReview(id) {
+      const reviews = getReviews().filter(r => r.id !== id);
+      setReviews(reviews); renderReviewsSection(); toast('🗑 Review removed');
+    }
+    function clearApprovedReviews() {
+      if (!confirm('Remove all approved reviews?')) return;
+      setReviews(getReviews().filter(r => r.status !== 'approved'));
+      renderReviewsSection(); toast('🗑 Cleared approved reviews');
+    }
+
+    function renderReviewsSection() {
+      const pending = document.getElementById('reviews-pending');
+      const approved = document.getElementById('reviews-approved');
+      if (!pending || !approved) return;
+      const reviews = getReviews();
+      const pList = reviews.filter(r => r.status === 'pending');
+      const aList = reviews.filter(r => r.status === 'approved');
+      const stars = n => '⭐'.repeat(Math.min(5, Math.max(1, n)));
+      const emptyMsg = msg => `<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:20px">${msg}</div>`;
+      const revCard = (r, showApprove) => `
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px">
+            <div>
+              <span style="font-size:13px;font-weight:600">${esc(r.name || 'Anonymous')}</span>
+              <span style="font-size:12px;color:var(--text-muted);margin-left:6px">${stars(r.rating)}</span>
+            </div>
+            <span style="font-size:10px;color:var(--text-muted)">${r.date || ''}</span>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">📦 ${esc(r.productName || '')}</div>
+          ${r.comment ? `<div style="font-size:13px;color:var(--text-mid);margin-bottom:8px">"${esc(r.comment)}"</div>` : ''}
+          <div style="display:flex;gap:6px">
+            ${showApprove ? `<button onclick="approveReview('${r.id}')" style="padding:5px 10px;background:var(--green-bg);border:1px solid rgba(45,122,79,.25);border-radius:7px;color:var(--green);font-size:11px;font-weight:600;cursor:pointer">✅ Approve</button>` : `<span style="font-size:11px;color:var(--green);font-weight:600">✅ Live on shop</span>`}
+            <button onclick="rejectReview('${r.id}')" style="padding:5px 10px;background:var(--red-bg);border:1px solid rgba(192,57,43,.2);border-radius:7px;color:var(--red);font-size:11px;font-weight:600;cursor:pointer">🗑 Delete</button>
+          </div>
+        </div>`;
+      pending.innerHTML = pList.length ? pList.map(r => revCard(r, true)).join('') : emptyMsg('No pending reviews 🎉');
+      approved.innerHTML = aList.length ? aList.map(r => revCard(r, false)).join('') : emptyMsg('No approved reviews yet');
+      // Update reviews badge on sidebar
+      const navR = document.getElementById('nav-reviews');
+      if (navR) {
+        const ex = navR.querySelector('.rev-count'); if (ex) ex.remove();
+        if (pList.length > 0) {
+          const b = document.createElement('span'); b.className = 'rev-count'; b.textContent = pList.length;
+          b.style.cssText = 'position:absolute;top:4px;right:4px;background:var(--gold);color:#fff;font-size:8px;font-weight:700;border-radius:8px;padding:1px 4px;min-width:14px;text-align:center;';
+          navR.appendChild(b);
+        }
+      }
+    }
+
+    // ── LOW STOCK ALERT (Phase 14) — WhatsApp Alert ──────────────────────
+    function checkLowStock() {
+      const prods = gp();
+      const threshold = parseInt(localStorage.getItem('ms_lowstock_threshold') || '5');
+      const waPhone = (window._SS ? window._SS.waPhone : '') || localStorage.getItem('ms_waPhone') || '';
+      const low = prods.filter(p => {
+        if (p.listingType === 'variation') return (p.variations || []).some(v => v.inStock !== false && v.stockQty > 0 && v.stockQty <= threshold);
+        return p.inStock !== false && p.stockQty > 0 && p.stockQty <= threshold;
+      });
+      if (!low.length) { toast('✅ All products have sufficient stock!'); return; }
+      if (!waPhone) { toast('⚠ Set WhatsApp number first in Listing tab!', 1); return; }
+      const lines = low.map(p => `• *${p.displayName || p.name}* — ${p.stockQty || '?'} left`).join('\n');
+      const msg = `🔔 *LOW STOCK ALERT — ${gsn()}*\n📅 ${new Date().toLocaleDateString('en-IN')}\n\n${lines}\n\n_Action needed: Restock soon!_`;
+      window.open(`https://wa.me/${waPhone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // ── BULK STOCK EDIT ───────────────────────────────────────────────────
+    let _bulkMode = false;
+    let _bulkSelected = new Set();
+
+    function toggleBulkMode() {
+      _bulkMode = !_bulkMode;
+      _bulkSelected.clear();
+      renderProductList();
+      const btn = document.getElementById('bulk-mode-btn');
+      if (btn) { btn.textContent = _bulkMode ? '✕ Exit Bulk Edit' : '✏️ Bulk Edit'; btn.style.background = _bulkMode ? 'var(--red-bg)' : ''; btn.style.color = _bulkMode ? 'var(--red)' : ''; }
+      const bar = document.getElementById('bulk-action-bar');
+      if (bar) bar.style.display = _bulkMode ? 'flex' : 'none';
+    }
+
+    function toggleBulkSelect(id) {
+      if (_bulkSelected.has(id)) _bulkSelected.delete(id); else _bulkSelected.add(id);
+      renderProductList();
+      const lbl = document.getElementById('bulk-count-lbl');
+      if (lbl) lbl.textContent = _bulkSelected.size + ' selected';
+    }
+
+    function bulkMarkInStock() {
+      if (!_bulkSelected.size) { toast('Select products first!', 1); return; }
+      const prods = gp();
+      prods.forEach(p => { if (_bulkSelected.has(p.id)) { p.inStock = true; } });
+      sp(prods); _bulkSelected.clear(); renderProductList(); toast('✅ Marked In Stock: ' + _bulkSelected.size + ' products');
+    }
+
+    function bulkMarkOOS() {
+      if (!_bulkSelected.size) { toast('Select products first!', 1); return; }
+      const prods = gp();
+      prods.forEach(p => { if (_bulkSelected.has(p.id)) { p.inStock = false; } });
+      sp(prods); _bulkSelected.clear(); renderProductList(); toast('🚫 Marked Out of Stock');
+    }
+
+    function bulkDelete() {
+      if (!_bulkSelected.size) { toast('Select products first!', 1); return; }
+      if (!confirm(`Move ${_bulkSelected.size} products to Trash?`)) return;
+      const prods = gp();
+      const trash = getTrash();
+      const thirtyDaysAgo = Date.now() - 30*24*60*60*1000;
+      const cleanTrash = trash.filter(t => t.deletedAt > thirtyDaysAgo);
+      prods.forEach(p => { if (_bulkSelected.has(p.id)) cleanTrash.push({...p, deletedAt: Date.now()}); });
+      setTrash(cleanTrash);
+      sp(prods.filter(p => !_bulkSelected.has(p.id)));
+      _bulkSelected.clear(); _bulkMode = false;
+      renderAll(); updateTrashBadge();
+      toast('🗑 Moved to Trash!');
     }
 
     function toast(msg, err = 0) { const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = msg; t.className = 'toast' + (err ? ' err' : '') + ' show'; setTimeout(() => t.classList.remove('show'), 2800); }

@@ -1360,6 +1360,33 @@
 
 
     }
+    /* ── STAR RATING / REVIEWS ──────────────────────────────────── */
+    .rv-wrap {
+      padding: 24px 36px 20px;
+      border-top: 1px solid var(--border);
+    }
+    .rv-wrap h3 { font-size:16px;font-weight:700;margin-bottom:14px; }
+    .rv-avg { display:flex;align-items:center;gap:10px;margin-bottom:16px; }
+    .rv-big-star { font-size:36px;font-weight:700;color:var(--text); }
+    .rv-stars-row { display:flex;gap:2px; }
+    .rv-star { font-size:20px;color:#ddd;cursor:pointer;transition:color .15s; }
+    .rv-star.lit, .rv-star:hover, .rv-star.preview { color:#f5a623; }
+    .rv-list { display:flex;flex-direction:column;gap:10px;margin-bottom:18px;max-height:260px;overflow-y:auto; }
+    .rv-card { background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:12px 14px; }
+    .rv-card-top { display:flex;align-items:center;justify-content:space-between;margin-bottom:4px; }
+    .rv-card-name { font-size:13px;font-weight:600; }
+    .rv-card-date { font-size:10px;color:var(--text-muted); }
+    .rv-card-comment { font-size:13px;color:var(--text-mid);margin-top:4px;line-height:1.5; }
+    .rv-form { background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 18px; }
+    .rv-form-title { font-size:13px;font-weight:700;margin-bottom:10px;color:var(--text); }
+    .rv-star-pick { display:flex;gap:4px;margin-bottom:10px; }
+    .rv-sp { font-size:28px;color:#ddd;cursor:pointer;transition:color .15s; }
+    .rv-sp.sel, .rv-sp:hover { color:#f5a623; }
+    .rv-fi { width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);font-size:13px;color:var(--text);outline:none;margin-bottom:8px; }
+    .rv-fi:focus { border-color:var(--accent); }
+    .rv-submit { padding:9px 20px;background:var(--accent);color:#fff;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s; }
+    .rv-submit:hover { background:var(--accent-lt); }
+    @media(max-width:768px) { .rv-wrap { padding:18px; } }
   </style>
 </head>
 
@@ -1436,6 +1463,7 @@
       <div class="dip" id="d-info"></div>
     </div>
     <div id="related-wrap" style="display:none"></div>
+    <div id="rv-section"></div>
   </div>
 
   <!-- STICKY BUY BAR -->
@@ -1674,6 +1702,7 @@
       showPage('detail');
       renderDetail(p, vid || null);
       renderRelated(p);
+      renderProductReviews(p);
       setupStickyBar(p, vid || null);
       // Scroll detail to top
       const dp = document.getElementById('page-detail'); if (dp) dp.scrollTop = 0;
@@ -2040,6 +2069,76 @@
     }
     function lbNav(d) { lbIdx = ((lbIdx + d + lbImgs.length) % lbImgs.length); document.getElementById('lb-img').src = lbImgs[lbIdx]; document.getElementById('lb-cap').textContent = lbName + (lbImgs.length > 1 ? ` · ${lbIdx + 1}/${lbImgs.length}` : ''); }
     function closeLb(e, force) { if (force || (e && e.target === document.getElementById('lb'))) { document.getElementById('lb').classList.remove('open'); document.body.style.overflow = ''; } }
+
+    // ── CUSTOMER REVIEWS (Phase 13) ──────────────────────────────────────
+    let _rvRating = 0;
+
+    function renderProductReviews(p) {
+      const sec = document.getElementById('rv-section');
+      if (!sec) return;
+      const allReviews = JSON.parse(localStorage.getItem('ms_reviews') || '[]');
+      const approved = allReviews.filter(r => r.productId === p.id && r.status === 'approved');
+      const avgRating = approved.length ? (approved.reduce((s, r) => s + (r.rating || 0), 0) / approved.length).toFixed(1) : null;
+      const starsFull = n => Array.from({length:5}, (_,i) => `<span class="rv-star${i < Math.round(n) ? ' lit' : ''}">&#9733;</span>`).join('');
+      _rvRating = 0;
+      sec.innerHTML = `
+        <div class="rv-wrap">
+          <h3>⭐ Customer Reviews</h3>
+          ${avgRating ? `<div class="rv-avg">
+            <div class="rv-big-star">${avgRating}</div>
+            <div>
+              <div class="rv-stars-row">${starsFull(avgRating)}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:3px">${approved.length} review${approved.length !== 1 ? 's' : ''}</div>
+            </div>
+          </div>` : ''}
+          <div class="rv-list" id="rv-list">
+            ${approved.length ? approved.slice().reverse().map(r => `
+              <div class="rv-card">
+                <div class="rv-card-top">
+                  <span class="rv-card-name">${esc(r.name || 'Anonymous')}</span>
+                  <span class="rv-card-date">${r.date || ''}</span>
+                </div>
+                <div>${Array.from({length:5},(_,i)=>`<span style="color:${i<r.rating?'#f5a623':'#ddd'};font-size:14px">★</span>`).join('')}</div>
+                ${r.comment ? `<div class="rv-card-comment">“${esc(r.comment)}”</div>` : ''}
+              </div>`).join('') : '<div style="color:var(--text-muted);font-size:13px;text-align:center;padding:14px">No reviews yet. Be the first!</div>'}
+          </div>
+          <div class="rv-form">
+            <div class="rv-form-title">✍️ Write a Review</div>
+            <div class="rv-star-pick" id="rv-star-pick">
+              ${[1,2,3,4,5].map(n => `<span class="rv-sp" onclick="setRvRating(${n})" data-v="${n}">★</span>`).join('')}
+            </div>
+            <input class="rv-fi" id="rv-name" placeholder="Your name (optional)" maxlength="40">
+            <textarea class="rv-fi" id="rv-comment" placeholder="Share your experience... (optional)" rows="3" maxlength="300" style="resize:vertical"></textarea>
+            <button class="rv-submit" onclick="submitReview('${p.id}','${esc(p.displayName || p.name)}')">Submit Review →</button>
+          </div>
+        </div>`;
+    }
+
+    function setRvRating(n) {
+      _rvRating = n;
+      document.querySelectorAll('.rv-sp').forEach((el, i) => el.classList.toggle('sel', i < n));
+    }
+
+    function submitReview(pid, pname) {
+      if (!_rvRating) { toast('Please select a star rating first!', 1); return; }
+      const name = (document.getElementById('rv-name') || {}).value || '';
+      const comment = (document.getElementById('rv-comment') || {}).value || '';
+      const reviews = JSON.parse(localStorage.getItem('ms_reviews') || '[]');
+      reviews.push({
+        id: 'rv_' + Date.now(),
+        productId: pid,
+        productName: pname,
+        name: name.trim() || 'Anonymous',
+        rating: _rvRating,
+        comment: comment.trim(),
+        date: new Date().toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}),
+        status: 'pending'
+      });
+      try { localStorage.setItem('ms_reviews', JSON.stringify(reviews)); } catch(e) {}
+      toast('⭐ Review submitted! It will appear after approval.');
+      const p = activeProduct;
+      if (p) renderProductReviews(p);
+    }
 
     // TOAST
     function toast(msg, err = 0) { const t = document.getElementById('toast'); document.getElementById('toast-msg').textContent = msg; t.className = 'toast' + (err ? ' red' : '') + ' show'; setTimeout(() => t.classList.remove('show'), 2600); }

@@ -59,6 +59,7 @@ window._SS = {
   storeName:    localStorage.getItem('ms_storeName')    || '',
   announcement: localStorage.getItem('ms_announcement') || '',
   waPhone:      localStorage.getItem('ms_waPhone')      || '',
+  _localWritePending: false,  // Flag to block onSnapshot during active writes
 };
 
 // ── READ (sync from cache — always instant) ──────────────────────
@@ -88,6 +89,14 @@ window.sp = (products) => {
   const previousProducts = window._SS.products;
   window._SS.products = products;
   _lsSet('ms_products', products);
+
+  // Block onSnapshot from overwriting our local data during the write window
+  // This prevents the "product disappears" race condition
+  window._SS._localWritePending = true;
+  clearTimeout(window._SS._localWriteTimer);
+  window._SS._localWriteTimer = setTimeout(() => {
+    window._SS._localWritePending = false;
+  }, 4000); // 4 seconds — enough for Firestore write to complete
 
   const oldIds  = new Set(previousProducts.map(p => p.id));
   const newIds  = new Set(products.map(p => p.id));
@@ -122,10 +131,16 @@ window.sp = (products) => {
   });
 
   _commitBatches(setOps, delOps)
-    .then(() => console.log('[DB] products saved ✓ (' + products.length + ' total)'))
+    .then(() => {
+      console.log('[DB] products saved ✓ (' + products.length + ' total)');
+      // Release the lock after confirmed write
+      window._SS._localWritePending = false;
+    })
     .catch(e => {
       console.warn('[DB] products write failed:', e.message);
+      window._SS._localWritePending = false;
       window._SS.products = previousProducts;
+      _lsSet('ms_products', previousProducts);
       if (typeof window._onSpError === 'function') window._onSpError(e.message);
     });
 };
@@ -193,6 +208,16 @@ window._SS.init = function(onUpdate) {
             }
           }).catch(() => {});
         } else {
+          // ── RACE CONDITION FIX ───────────────────────────────────
+          // If a local write is pending (sp() was called recently),
+          // skip this snapshot update to avoid overwriting local data
+          // with stale Firestore state before the write commits.
+          if (window._SS._localWritePending) {
+            console.log('[DB] onSnapshot skipped — local write in progress');
+            if (!pReady) { pReady = true; check(); }
+            return;
+          }
+
           // Sort by product id or by a stored order if present
           list.sort((a, b) => {
             if (a._order != null && b._order != null) return a._order - b._order;
